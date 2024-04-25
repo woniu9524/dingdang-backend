@@ -1,0 +1,24 @@
+# postgresql
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dingdingdangdang
+    username: postgres
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+  # redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# mybatis
+mybatis:
+  type-aliases-package: org.dingdang.domain
+  mapper-locations: classpath:/mappers/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+jwt:
+  secretKey: mySecretKeycdvsaaaaa544568468cdac64dfe834256656aaaaaaaavgrfgvaeerg
+  expiration: 3600  # Token有效期，单位秒，这里设置为1小时
+  infiniteExpiration: false  # 设置为true时，Token将不设置过期时间

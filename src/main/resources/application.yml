@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: application-dev
+  profiles:
+    active: dev
+
+server:
+  port: 8080
+
+
+logging:
+  level:
+    root: INFO
+    org.org.dingdang: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# 雪花算法
+idworker:
+  worker-id: 1
+  datacenter-id: 1
