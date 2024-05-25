@@ -3,6 +3,13 @@ spring:
     name: application-dev
   profiles:
     active: dev
+  ai:
+    openai:
+      api-key: sk-f4b7b1cd0d864b1ca32a73fd681176ba
+
+
+
+
 
 server:
   port: 8080
@@ -11,7 +18,7 @@ server:
 logging:
   level:
     root: INFO
-    org.org.dingdang: DEBUG
+    org.dingdang: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
@@ -19,3 +26,11 @@ logging:
 idworker:
   worker-id: 1
   datacenter-id: 1
+
+wechat:
+  appid: wxd1d04e884923f52e
+  secret: b2b11d4e1cbd8f91db2144e803732ba1
+
+llm:
+  qwen:
+    api-key: sk-f4b7b1cd0d864b1ca32a73fd681176ba

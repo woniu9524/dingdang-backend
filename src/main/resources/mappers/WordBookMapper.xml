@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.dingdang.mapper.WordBookMapper">
+
+    <insert id="insertWordGenerateHistory" parameterType="WordGenerateHistory">
+        INSERT INTO word_generate_history
+            (generate_id, user_id, timestamp, generate_text)
+        VALUES
+            (#{generateId}, #{userId}, #{timestamp}, #{generateText})
+    </insert>
+
+    <update id="upsertDailyLearnCount">
+<![CDATA[
+        INSERT INTO daily_learning_stats (user_id, learning_date, new_words_count, reviewed_words_count)
+        VALUES (#{userId}, CURRENT_DATE, 1, 0)
+        ON CONFLICT (user_id, learning_date) DO UPDATE
+        SET new_words_count = daily_learning_stats.new_words_count + 1;
+]]>
+    </update>
+
+    <update id="upsertDailyReviewCount">
+<![CDATA[
+        INSERT INTO daily_learning_stats (user_id, learning_date, new_words_count, reviewed_words_count)
+        VALUES (#{userId}, CURRENT_DATE, 0, 1)
+        ON CONFLICT (user_id, learning_date) DO UPDATE
+        SET reviewed_words_count = daily_learning_stats.reviewed_words_count + 1;
+]]>
+    </update>
+
+
+
+    <update id="useWordBook">
+    <![CDATA[
+        INSERT INTO user_word_books (user_id, book_no, lazy_mode, create_time, update_time)
+        VALUES (#{userId}, #{bookNo}, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT (user_id)
+        DO UPDATE SET update_time = CURRENT_TIMESTAMP,book_no=#{bookNo};
+        ]]>
+</update>
+    <delete id="stopUseWordBook">
+        DELETE FROM user_word_books
+        WHERE user_id = #{userId} AND book_no = #{bookNo}
+    </delete>
+
+    <select id="getWordBookList" resultType="org.dingdang.domain.vo.WordbooksMstVo">
+        WITH user_active_books AS (
+            SELECT book_no, lazy_mode
+            FROM user_word_books
+            WHERE user_id = #{userId}
+        ),
+             mastered_words AS (
+                 SELECT book_no, COUNT(word) AS mastered_count
+                 FROM user_word_learning
+                 WHERE user_id = #{userId} AND last_grade > 5
+                 GROUP BY book_no
+             ),
+             stopword_counts AS (
+                 SELECT
+                     language,
+                     (SELECT COUNT(*) FROM stopwords_base WHERE language = swb.language) -
+                     (SELECT COUNT(*) FROM stopword_patch WHERE user_id = #{userId} AND language = swb.language) AS net_stopwords
+                 FROM stopwords_base swb
+                 GROUP BY language
+             )
+        SELECT
+            wbm.book_no,
+            wbm.title,
+            wbm.description,
+            wbm.tag,
+            wbm.language,
+            wbm.create_by,
+            wbm.create_time,
+            wbm.update_by,
+            wbm.update_time,
+            wbm.remark,
+            wbm.status,
+            CASE WHEN uab.book_no IS NOT NULL THEN 0 ELSE wbm.book_seq END AS book_seq,
+            wbm.word_count,
+            CASE WHEN uab.book_no IS NOT NULL THEN true ELSE false END AS active,
+            COALESCE(uab.lazy_mode, false) AS lazy_mode, -- 确保选择 lazy_mode 字段
+            COALESCE(mw.mastered_count, 0) + COALESCE(sc.net_stopwords, 0) AS mastered_count
+        FROM word_books_mst wbm
+                 LEFT JOIN user_active_books uab ON wbm.book_no = uab.book_no
+                 LEFT JOIN mastered_words mw ON wbm.book_no = mw.book_no
+                 LEFT JOIN stopword_counts sc ON wbm.language = sc.language
+        ORDER BY book_seq, wbm.book_no
+    </select>
+
+
+
+
+    <select id="getWordList" resultType="org.dingdang.domain.vo.WordbookWord">
+        WITH book_numbers AS (
+            SELECT book_no
+            FROM user_word_books
+            WHERE user_id = #{userId}
+        ),
+             excluded_words AS (
+                 SELECT word
+                 FROM user_word_learning
+                 WHERE user_id = #{userId} AND last_grade > 5 AND book_no IN (SELECT book_no FROM book_numbers)
+             ),
+             stopwords AS (
+                 SELECT word
+                 FROM stopwords_base
+                 WHERE language = (SELECT language FROM word_books_mst WHERE book_no IN (SELECT book_no FROM book_numbers))
+                   AND word NOT IN (
+                     SELECT word
+                     FROM stopword_patch
+                     WHERE user_id = #{userId} AND language = (SELECT language FROM word_books_mst WHERE book_no IN (SELECT book_no FROM book_numbers))
+                 )
+             ),
+             final_words AS (
+                 SELECT w.*
+                 FROM word_books_lin w
+                          JOIN book_numbers b ON w.book_no = b.book_no
+                 WHERE w.word NOT IN (SELECT word FROM excluded_words)
+                   AND w.word NOT IN (SELECT word FROM stopwords)
+             )
+
+        SELECT * FROM final_words;
+
+    </select>
+    <select id="getWordsToLearn" resultType="org.dingdang.domain.vo.WordbookWord">
+        WITH user_books AS (
+            SELECT book_no
+            FROM user_word_books
+            WHERE user_id = #{userId}
+        ),
+             user_words AS (
+                 SELECT word
+                 FROM user_word_learning
+                 WHERE user_id = #{userId}
+             ),
+             all_stopwords AS (
+                 SELECT word
+                 FROM stopwords_base
+                 UNION
+                 SELECT word
+                 FROM stopword_patch
+                 WHERE user_id = #{userId}
+             ),
+             book_words AS (
+                 SELECT wbl.word, wbl.translation, wbl.lazy_translation, wbl.sentence, wbl.sentence_translation
+                 FROM word_books_lin wbl
+                          JOIN user_books ub ON wbl.book_no = ub.book_no
+             )
+        SELECT bw.word, bw.translation, bw.lazy_translation, bw.sentence, bw.sentence_translation
+        FROM book_words bw
+                 LEFT JOIN all_stopwords sw ON bw.word = sw.word
+                 LEFT JOIN user_words uw ON bw.word = uw.word
+        WHERE sw.word IS NULL
+          AND uw.word IS NULL
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+    <select id="getWordReviewToday" resultType="org.dingdang.domain.vo.WordbookWord">
+        WITH user_books AS (
+        SELECT book_no
+        FROM user_word_books
+        WHERE user_id = #{userId}
+        ),
+        learning_words AS (
+        SELECT *
+        FROM user_word_learning
+        WHERE user_id = #{userId}
+        AND next_review_date::date  <![CDATA[ <= ]]> CURRENT_DATE
+        AND need_review  <![CDATA[ <> ]]> 0
+        )
+        SELECT DISTINCT
+        wbl.word,
+        wbl.phonetic,
+        wbl.definition,
+        wbl.translation,
+        wbl.pos,
+        wbl.audio,
+        wbl.lazy_translation,
+        wbl.sentence,
+        wbl.sentence_translation,
+        wbl.language,
+        lw.review_count,
+        lw.last_review_date,
+        lw.next_review_date,
+        lw.translation AS user_translation,
+        lw.lazy_translation AS user_lazy_translation,
+        lw.e_factor,
+        lw.interval,
+        lw.sentence AS user_sentence,
+        lw.sentence_translation AS user_sentence_translation,
+        lw.language AS user_language,
+        lw.last_grade,
+        lw.need_review
+        FROM
+        word_books_lin wbl
+        INNER JOIN
+        user_books ub ON wbl.book_no = ub.book_no
+        INNER JOIN
+        learning_words lw ON wbl.word = lw.word;
+    </select>
+    <select id="getTodayLearnCount" resultType="java.util.Map">
+        WITH today AS (
+            SELECT CURRENT_DATE AS today_date
+        )
+        SELECT
+            COUNT(CASE WHEN DATE(last_review_date) = today.today_date AND review_count = 1 THEN 1 END) AS learn_count,
+            COUNT(CASE WHEN DATE(last_review_date) = today.today_date AND review_count > 1 THEN 1 END) AS review_count
+        FROM
+            user_word_learning, today
+        WHERE
+            user_id = #{userId}
+    </select>
+
+    <select id="getWordMastery" resultType="org.dingdang.domain.vo.WordMasteryVo">
+        WITH user_books AS (
+            SELECT book_no
+            FROM user_word_books
+            WHERE user_id = #{userId}
+        ),
+             learning_counts AS (
+                 SELECT u.book_no, u.last_grade, COUNT(*) AS count
+                 FROM user_word_learning u
+                          JOIN word_books_lin wbl ON u.word = wbl.word
+                 WHERE u.user_id = #{userId}
+                   AND wbl.book_no IN (SELECT book_no FROM user_books)
+                   AND u.last_grade BETWEEN 1 AND 6
+                 GROUP BY u.book_no, u.last_grade
+             )
+        SELECT
+            lc.book_no,
+            SUM(CASE WHEN lc.last_grade = 1 THEN lc.count ELSE 0 END) AS "Unfamiliar",
+            SUM(CASE WHEN lc.last_grade = 2 THEN lc.count ELSE 0 END) AS "Difficult",
+            SUM(CASE WHEN lc.last_grade = 3 THEN lc.count ELSE 0 END) AS "Good",
+            SUM(CASE WHEN lc.last_grade = 4 THEN lc.count ELSE 0 END) AS "Easy",
+            SUM(CASE WHEN lc.last_grade = 5 THEN lc.count ELSE 0 END) AS "Mastered",
+            SUM(CASE WHEN lc.last_grade = 6 THEN lc.count ELSE 0 END) AS "FullyMastered"
+        FROM learning_counts lc
+        GROUP BY lc.book_no;
+    </select>
+</mapper>

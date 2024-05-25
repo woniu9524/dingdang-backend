@@ -37,6 +37,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
         // 如果不是通过HandlerMethod映射的调用，如静态资源等，直接放行
         return true;
+
     }
 
     private boolean checkAuthentication(HttpServletRequest request, HttpServletResponse response) {
@@ -59,6 +60,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             }
         } catch (Exception e) {
             // Token解析失败，可能是因为过期或格式错误
+            System.out.println(e);
         }
         return false;
     }

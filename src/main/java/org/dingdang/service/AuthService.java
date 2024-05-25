@@ -1,6 +1,8 @@
 package org.dingdang.service;
 
+import org.dingdang.common.ApiResponse;
 import org.dingdang.domain.SysUser;
+import org.springframework.http.ResponseEntity;
 
 
 /**
@@ -11,5 +13,11 @@ import org.dingdang.domain.SysUser;
 
 public interface AuthService {
 
-    String register(SysUser sysUser);
+
+    ResponseEntity<byte[]> loginByWechat(String scene);
+
+
+    ApiResponse isLogin(String scene);
+
+    ApiResponse handleWechatCallback(String scene, String code,Boolean useScene);
 }

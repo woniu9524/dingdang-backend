@@ -10,4 +10,5 @@ public class Constants {
     // redis token前缀
     public static final String REDIS_TOKEN_PREFIX="token:";
 
+    public static final String WECHAT_SCENE_CACHE = "wechat_scene_cache:";
 }

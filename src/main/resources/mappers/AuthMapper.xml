@@ -5,8 +5,8 @@
 
     <!-- 插入操作 -->
     <insert id="register" parameterType="org.dingdang.domain.SysUser">
-        INSERT INTO sys_user (user_id, open_id, username, password)
-        VALUES (#{userId}, #{openId}, #{username}, #{password})
+        INSERT INTO sys_user (user_id, open_id, username)
+        VALUES (#{userId}, #{openId}, #{userName})
     </insert>
 
 </mapper>

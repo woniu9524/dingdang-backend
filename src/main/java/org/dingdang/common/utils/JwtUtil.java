@@ -28,10 +28,10 @@ public class JwtUtil {
         SecretKey key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecretKey()));
 
         Date expirationDate = null;
-        if (!jwtProperties.isInfiniteExpiration()) {
-            long expirationTimeLong = jwtProperties.getExpiration() * 1000; // convert seconds to milliseconds
-            expirationDate = new Date(System.currentTimeMillis() + expirationTimeLong);
-        }
+//        if (!jwtProperties.isInfiniteExpiration()) {
+//            long expirationTimeLong = jwtProperties.getExpiration() * 1000; // convert seconds to milliseconds
+//            expirationDate = new Date(System.currentTimeMillis() + expirationTimeLong);
+//        }
 
 
         return Jwts.builder()
