@@ -150,8 +150,7 @@ public class WordBookServiceImpl implements WordBookService {
             } else {
                 throw new IllegalArgumentException("生成的文本不包含有效的 JSON 数组");
             }
-            jsonString=jsonString.replaceAll("english","English");
-            jsonString=jsonString.replaceAll("chinese","Chinese");
+
 
             // 转化为json对象
             JSONArray jsonArray = JSON.parseArray(jsonString);

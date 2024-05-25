@@ -73,7 +73,8 @@ public class QwenUtil {
                 .apiKey(apiKey)
                 .messages(Arrays.asList(systemMsg, userMsg))
                 .resultFormat(GenerationParam.ResultFormat.MESSAGE)
-                .topP(0.8)
+                .topP(0.6)
+                .temperature(0.6F)
                 .build();
         return gen.call(param).getOutput().getChoices().getFirst().getMessage().getContent();
     }
