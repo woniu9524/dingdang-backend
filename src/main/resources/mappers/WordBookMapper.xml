@@ -161,6 +161,7 @@
         LIMIT #{size} OFFSET #{offset}
     </select>
     <select id="getWordReviewToday" resultType="org.dingdang.domain.vo.WordbookWord">
+        <![CDATA[
         SELECT DISTINCT
         wbl.word,
         wbl.phonetic,
@@ -196,6 +197,7 @@
         FROM user_word_books
         WHERE user_id = #{userId}
         );
+        ]]>
     </select>
     <select id="getTodayLearnCount" resultType="java.util.Map">
         WITH today AS (
