@@ -72,4 +72,6 @@ public interface WordBookMapper {
     List<DailyLearningStats> getWordLearnHistory(Long userId);
 
     List<WordMasteryVo> getWordMastery(Long userId);
+
+    void updateWordLearnBookNo(Long userId, Long bookNo);
 }

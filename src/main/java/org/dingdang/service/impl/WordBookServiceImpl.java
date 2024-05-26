@@ -50,6 +50,8 @@ public class WordBookServiceImpl implements WordBookService {
         userWordBook.setUserId(currentUser.getUserId());
         int flag = wordBookMapper.useWordBook(userWordBook);
         if (flag > 0) {
+            // 修改学习记录里的词书
+            wordBookMapper.updateWordLearnBookNo(currentUser.getUserId(),bookNo);
             return ApiResponse.ofSuccess();
         } else {
             return ApiResponse.ofMessage(400, "使用单词书失败");
@@ -65,6 +67,7 @@ public class WordBookServiceImpl implements WordBookService {
         userWordBook.setUserId(currentUser.getUserId());
         int flag = wordBookMapper.stopUseWordBook(userWordBook);
         if (flag > 0) {
+
             return ApiResponse.ofSuccess();
         } else {
             return ApiResponse.ofMessage(400, "停用单词书失败");

@@ -38,6 +38,15 @@
         DO UPDATE SET update_time = CURRENT_TIMESTAMP,book_no=#{bookNo};
         ]]>
 </update>
+    <update id="updateWordLearnBookNo">
+        UPDATE user_word_learning
+        SET book_no = #{bookNo}
+            FROM word_books_lin wbl
+        WHERE user_word_learning.word = wbl.word
+          AND wbl.book_no = #{bookNo}
+          AND user_word_learning.user_id = #{userId};
+
+    </update>
     <delete id="stopUseWordBook">
         DELETE FROM user_word_books
         WHERE user_id = #{userId} AND book_no = #{bookNo}
@@ -136,10 +145,7 @@
              all_stopwords AS (
                  SELECT word
                  FROM stopwords_base
-                 UNION
-                 SELECT word
-                 FROM stopword_patch
-                 WHERE user_id = #{userId}
+                 WHERE user_id = #{userId} -- 暂时去掉排除的了，后面如果用到再写
              ),
              book_words AS (
                  SELECT wbl.word, wbl.translation, wbl.lazy_translation, wbl.sentence, wbl.sentence_translation
@@ -155,18 +161,6 @@
         LIMIT #{size} OFFSET #{offset}
     </select>
     <select id="getWordReviewToday" resultType="org.dingdang.domain.vo.WordbookWord">
-        WITH user_books AS (
-        SELECT book_no
-        FROM user_word_books
-        WHERE user_id = #{userId}
-        ),
-        learning_words AS (
-        SELECT *
-        FROM user_word_learning
-        WHERE user_id = #{userId}
-        AND next_review_date::date  <![CDATA[ <= ]]> CURRENT_DATE
-        AND need_review  <![CDATA[ <> ]]> 0
-        )
         SELECT DISTINCT
         wbl.word,
         wbl.phonetic,
@@ -178,24 +172,30 @@
         wbl.sentence,
         wbl.sentence_translation,
         wbl.language,
-        lw.review_count,
-        lw.last_review_date,
-        lw.next_review_date,
-        lw.translation AS user_translation,
-        lw.lazy_translation AS user_lazy_translation,
-        lw.e_factor,
-        lw.interval,
-        lw.sentence AS user_sentence,
-        lw.sentence_translation AS user_sentence_translation,
-        lw.language AS user_language,
-        lw.last_grade,
-        lw.need_review
-        FROM
-        word_books_lin wbl
-        INNER JOIN
-        user_books ub ON wbl.book_no = ub.book_no
-        INNER JOIN
-        learning_words lw ON wbl.word = lw.word;
+        uwl.review_count,
+        uwl.last_review_date,
+        uwl.next_review_date,
+        uwl.translation AS user_translation,
+        uwl.lazy_translation AS user_lazy_translation,
+        uwl.e_factor,
+        uwl.interval,
+        uwl.sentence AS user_sentence,
+        uwl.sentence_translation AS user_sentence_translation,
+        uwl.language AS user_language,
+        uwl.last_grade,
+        uwl.need_review
+        FROM user_word_learning uwl
+        INNER JOIN word_books_lin wbl
+        ON uwl.book_no = wbl.book_no
+        AND uwl.word = wbl.word
+        WHERE uwl.user_id = #{userId}
+        AND uwl.need_review = 1
+        AND uwl.next_review_date::date <= CURRENT_DATE
+        AND uwl.book_no IN (
+        SELECT book_no
+        FROM user_word_books
+        WHERE user_id = #{userId}
+        );
     </select>
     <select id="getTodayLearnCount" resultType="java.util.Map">
         WITH today AS (
