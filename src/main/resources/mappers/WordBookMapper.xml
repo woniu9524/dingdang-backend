@@ -145,7 +145,7 @@
              all_stopwords AS (
                  SELECT word
                  FROM stopwords_base
-                 WHERE user_id = #{userId} -- 暂时去掉排除的了，后面如果用到再写
+                 -- 暂时去掉排除的了，后面如果用到再写
              ),
              book_words AS (
                  SELECT wbl.word, wbl.translation, wbl.lazy_translation, wbl.sentence, wbl.sentence_translation
