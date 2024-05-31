@@ -28,11 +28,11 @@ public class SM2Tool {
      * @param word   单词
      * @param grade  用户对单词记忆的评分
      */
-    public void updateReview(Long userId, String word, int grade) {
+    public void updateReview(Long userId, String word, int grade,Long bookNo) {
 
 
         // 从数据库中查询单词信息
-        UserWordLearning wordLearning = wordBookMapper.selectWord(userId, word);
+        UserWordLearning wordLearning = wordBookMapper.selectWord(userId, word,bookNo);
 
         // 补充数据统计
         if (wordLearning == null){
@@ -44,7 +44,7 @@ public class SM2Tool {
         // 如果评分为6，表示删除，不需要继续学习
         if (grade == 6) {
             // 设置need_review为0，不再需要复习
-            wordBookMapper.upsertNeedReview(userId, word, 0,6,1);
+            wordBookMapper.upsertNeedReview(userId, word,bookNo, 0,6,1);
             return;
         }
 
@@ -57,6 +57,7 @@ public class SM2Tool {
             wordLearning.setInterval(0);
             wordLearning.setReviewCount(0);
             wordLearning.setNeedReview(1); // 初次学习需要复习
+            wordLearning.setBookNo(bookNo);
         }
 
         // 获取单词的当前EFactor、复习间隔和复习次数
@@ -103,16 +104,16 @@ public class SM2Tool {
      * @param word   单词
      * @return 是否需要复习
      */
-    public boolean isDueForReview(Long userId, String word) {
-        UserWordLearning wordLearning = wordBookMapper.selectWord(userId, word);
-
-        if (wordLearning != null) {
-            LocalDateTime nextReviewDate = wordLearning.getNextReviewDate().toLocalDateTime();
-            return LocalDateTime.now().isAfter(nextReviewDate);
-        }
-
-        return false;
-    }
+//    public boolean isDueForReview(Long userId, String word) {
+//        UserWordLearning wordLearning = wordBookMapper.selectWord(userId, word);
+//
+//        if (wordLearning != null) {
+//            LocalDateTime nextReviewDate = wordLearning.getNextReviewDate().toLocalDateTime();
+//            return LocalDateTime.now().isAfter(nextReviewDate);
+//        }
+//
+//        return false;
+//    }
 
     /**
      * 获取用户需要复习的全部单词
@@ -129,16 +130,16 @@ public class SM2Tool {
      *
      * @param userId 用户ID
      */
-    public void reviewDueWords(Long userId) {
-        List<String> dueWords = getAllDueWords(userId);
-
-        Scanner scanner = new Scanner(System.in);
-
-        for (String word : dueWords) {
-            System.out.println("Review word: " + word);
-            System.out.println("Rate your memory (0-5): ");
-            int grade = scanner.nextInt();
-            updateReview(userId, word, grade);
-        }
-    }
+//    public void reviewDueWords(Long userId) {
+//        List<String> dueWords = getAllDueWords(userId);
+//
+//        Scanner scanner = new Scanner(System.in);
+//
+//        for (String word : dueWords) {
+//            System.out.println("Review word: " + word);
+//            System.out.println("Rate your memory (0-5): ");
+//            int grade = scanner.nextInt();
+//            updateReview(userId, word, grade);
+//        }
+//    }
 }

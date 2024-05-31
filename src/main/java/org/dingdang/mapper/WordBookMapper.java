@@ -29,16 +29,16 @@ public interface WordBookMapper {
     List<WordbookWord> getWordList(@Param("userId") Long userId);
 
     // 查询单词信息
-    @Select("SELECT * FROM user_word_learning WHERE user_id = #{userId} AND word = #{word}")
-    UserWordLearning selectWord(@Param("userId") Long userId, @Param("word") String word);
+    @Select("SELECT * FROM user_word_learning WHERE user_id = #{userId} AND word = #{word} AND book_no=#{bookNo}")
+    UserWordLearning selectWord(@Param("userId") Long userId, @Param("word") String word, @Param("bookNo") Long bookNo);
 
     // 更新单词复习信息
-    @Insert("INSERT INTO user_word_learning (user_id, word, e_factor, interval, review_count, last_review_date, next_review_date, last_grade, need_review) VALUES (#{userId}, #{word}, #{eFactor}, #{interval}, #{reviewCount}, #{lastReviewDate}, #{nextReviewDate}, #{lastGrade}, #{needReview}) ON CONFLICT (user_id, word) DO UPDATE SET e_factor = EXCLUDED.e_factor, interval = EXCLUDED.interval, review_count = EXCLUDED.review_count, last_review_date = EXCLUDED.last_review_date, next_review_date = EXCLUDED.next_review_date, last_grade = EXCLUDED.last_grade, need_review = EXCLUDED.need_review")
+    @Insert("INSERT INTO user_word_learning (user_id, word, e_factor, interval, review_count, last_review_date, next_review_date, last_grade, need_review,book_no) VALUES (#{userId}, #{word}, #{eFactor}, #{interval}, #{reviewCount}, #{lastReviewDate}, #{nextReviewDate}, #{lastGrade}, #{needReview},#{bookNo}) ON CONFLICT (user_id, word) DO UPDATE SET e_factor = EXCLUDED.e_factor, interval = EXCLUDED.interval, review_count = EXCLUDED.review_count, last_review_date = EXCLUDED.last_review_date, next_review_date = EXCLUDED.next_review_date, last_grade = EXCLUDED.last_grade, need_review = EXCLUDED.need_review,book_no=EXCLUDED.book_no")
     void upsertWord(UserWordLearning wordLearning);
 
     // 更新单词的need_review状态
-    @Insert("INSERT INTO user_word_learning (user_id, word, need_review, last_grade, review_count) VALUES (#{userId}, #{word}, #{needReview}, #{lastGrade}, #{reviewCount}) ON CONFLICT (user_id, word) DO UPDATE SET need_review = EXCLUDED.need_review, last_grade = EXCLUDED.last_grade, review_count = EXCLUDED.review_count")
-    void upsertNeedReview(@Param("userId") Long userId, @Param("word") String word, @Param("needReview") int needReview, @Param("lastGrade") int lastGrade, @Param("reviewCount") int reviewCount);
+    @Insert("INSERT INTO user_word_learning (user_id, word, book_no, need_review, last_grade, review_count) VALUES (#{userId}, #{word}, #{bookNo}, #{needReview}, #{lastGrade}, #{reviewCount}) ON CONFLICT (user_id, word) DO UPDATE SET book_no = EXCLUDED.book_no, need_review = EXCLUDED.need_review, last_grade = EXCLUDED.last_grade, review_count = EXCLUDED.review_count")
+    void upsertNeedReview(@Param("userId") Long userId, @Param("word") String word, @Param("bookNo") Long bookNo, @Param("needReview") int needReview, @Param("lastGrade") int lastGrade, @Param("reviewCount") int reviewCount);
 
     // 查询需要复习的单词
     @Select("SELECT word FROM user_word_learning WHERE user_id = #{userId} AND need_review = 1 AND next_review_date <= #{currentDate}")
@@ -48,7 +48,7 @@ public interface WordBookMapper {
 
     List<WordbookWord> getWordReviewToday(Long userId);
 
-    Map<String,Integer> getTodayLearnCount(Long userId);
+    Map<String, Integer> getTodayLearnCount(Long userId);
 
     void insertWordGenerateHistory(WordGenerateHistory wordGenerateHistory);
 
@@ -74,4 +74,7 @@ public interface WordBookMapper {
     List<WordMasteryVo> getWordMastery(Long userId);
 
     void updateWordLearnBookNo(Long userId, Long bookNo);
+
+    @Select("SELECT book_no FROM user_word_books WHERE user_id=#{userId}")
+    Long getWordLearnBookNo(Long userId);
 }

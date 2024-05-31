@@ -88,7 +88,9 @@ public class WordBookServiceImpl implements WordBookService {
     @Override
     public ApiResponse scoreWord(String word, Integer grade) {
         SysUser currentUser = UserContextUtil.getCurrentUser();
-        sm2Tool.updateReview(currentUser.getUserId(), word, grade);
+        // 查询当前的单词书
+        Long bookNo = wordBookMapper.getWordLearnBookNo(currentUser.getUserId());
+        sm2Tool.updateReview(currentUser.getUserId(), word, grade,bookNo);
         return ApiResponse.ofSuccess();
     }
 
