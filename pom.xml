@@ -14,7 +14,7 @@
     <name>dingdang-backend</name>
     <description>dingdang-backend</description>
     <properties>
-        <java.version>22</java.version>
+        <java.version>21</java.version>
     </properties>
     <dependencies>
         <dependency>
